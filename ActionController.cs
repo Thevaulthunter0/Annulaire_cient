@@ -52,7 +52,7 @@ namespace Annulaire_Client
         public void AjouterMembre(string nom, string prenom, string categorie, string matricule, string email, string telephone, string listeRouge, string domaine)
         {
             List<List<String>> nMembre = new List<List<String>>();
-            nMembre.Add(new List<String> { nom, prenom, categorie, matricule, email, telephone, listeRouge ,domaine });
+            nMembre.Add(new List<String> { nom, prenom, categorie, matricule, email, telephone, listeRouge, domaine });
             Paquet p = new Paquet(4, 0, TypePaquet.Demande, nMembre, false);
             EnvoyerPaquet(p);
         }
@@ -67,7 +67,7 @@ namespace Annulaire_Client
         }
 
         //Requete num 6
-        public void ModifierMembre(string num ,string nom, string prenom, string categorie, string matricule, string email, string telephone, string listeRouge, string domaine)
+        public void ModifierMembre(string num, string nom, string prenom, string categorie, string matricule, string email, string telephone, string listeRouge, string domaine)
         {
             List<List<String>> nNum = new List<List<String>>();
             nNum.Add(new List<String> { num, nom, prenom, categorie, matricule, email, telephone, listeRouge, domaine });
