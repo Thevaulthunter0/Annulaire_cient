@@ -11,9 +11,13 @@ namespace Annulaire_Client
     internal class Menu
     {
         ActionController aController;
+        bool isAdmin = false;
+
         public Menu(Socket SocketClient) {
             this.aController = new ActionController(SocketClient);
         }
+
+        public void setIsAdmin(bool set) { this.isAdmin = set; }
 
         public void MenuPrincipal()
         {

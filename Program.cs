@@ -27,17 +27,18 @@ namespace Annulaire_Client
                 await socketClient.ConnectAsync(new IPEndPoint(IPAddress.Parse(serverAddress), port));
                 Console.WriteLine("Connected to the server.");
 
-                // Start receiving data from the server in a separate task
-                Task receiveTask = Task.Run(() => ReceiveData());
-
                 Menu menu = new Menu(socketClient);
+
+                // Start receiving data from the server in a separate task
+                Task receiveTask = Task.Run(() => ReceiveData(menu));
+
                 menu.MenuPrincipal();
 
                 Paquet paquetDec = new Paquet(0, 0, TypePaquet.Deconnexion, new List<List<String>>(), false);
                 byte[] buffer = paquetDec.bytes();
                 await socketClient.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
 
-                // Close the socket and cleanup
+                // Close the socket
                 socketClient.Close();
                 Console.WriteLine("Connection closed.");
             }
@@ -49,7 +50,7 @@ namespace Annulaire_Client
         }
 
         // This task handles receiving messages from the server
-        private static void ReceiveData()
+        private static void ReceiveData(Menu menu)
         {
             byte[] buffer;
             int bytesReceived;
@@ -62,7 +63,7 @@ namespace Annulaire_Client
                     if (bytesReceived > 0)
                     {
                         Paquet p = new Paquet(buffer);
-                        HandleReceivedMessage(p);
+                        HandleReceivedMessage(p, menu);
                     }
                 }
                 catch (SocketException)
@@ -74,7 +75,7 @@ namespace Annulaire_Client
             }
         }
 
-        private static void HandleReceivedMessage(Paquet paquet)
+        private static void HandleReceivedMessage(Paquet paquet, Menu menu)
         {
             ReceiveController rContr = new ReceiveController();
             switch (paquet.type)
@@ -83,8 +84,13 @@ namespace Annulaire_Client
                     if(paquet.boolInfo == true)
                     {
                         rContr.PrintConnexionSucces();
+                        menu.setIsAdmin(true);
                     }
-                    else { rContr.PrintConnexionFailed(); }
+                    else 
+                    { 
+                        rContr.PrintConnexionFailed(); 
+                        menu.setIsAdmin(false);
+                    }
                     break;
 
                 case TypePaquet.Demande:
