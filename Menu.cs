@@ -8,12 +8,14 @@ namespace Annulaire_Client
         private ActionController aController;
         private static List<Option> options = new();
         private bool isAdmin = false; // Ajouter un indicateur pour vérifier si l'utilisateur est un administrateur
-
+        
         public Menu(Socket SocketClient)
         {
             this.aController = new ActionController(SocketClient);
             InitializeMenu();
         }
+        
+        public void setIsAdmin(bool set) { this.isAdmin = set; }
 
         // Initialiser le menu avec les options disponibles
         private void InitializeMenu()
@@ -38,7 +40,8 @@ namespace Annulaire_Client
             while (true)
             {
                 if (inMenu)
-                {
+                {   
+                    
                     ConsoleKeyInfo keyinfo = Console.ReadKey(true);
                     if (keyinfo.Key == ConsoleKey.DownArrow)
                     {
@@ -150,12 +153,7 @@ namespace Annulaire_Client
                     if (!string.IsNullOrEmpty(Entree))
                     {
                         aController.VerifierMdp(Entree);
-                        if (Entree == "12345") // FIX POUR USE SERVER INSTEAD
-                            isAdmin = true; // TO DO, DEMANDER MATH COMMENT CHERCHER SI MDP EST VRAI ADMIN
-                        else
-                        {
-                            isAdmin = false;
-                        }
+                        Thread.Sleep(1000);
                         break;
 
                     }
