@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.Design;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 
 namespace Annulaire_Client
 {
@@ -97,8 +98,10 @@ namespace Annulaire_Client
 
             Console.WriteLine(border);
             Console.WriteLine(CenterText("***********************************", width));
-            Console.WriteLine(CenterText("*****     DEVOIR 3 : Annulaire     *****", width));
+            Console.WriteLine(CenterText("*****     DEVOIR 3 : ANNULAIRE     *****", width));
             Console.WriteLine(CenterText("***********************************", width));
+            Console.WriteLine(CenterText("utilisez les touches directionnelles haut et bas", width));
+            Console.WriteLine(CenterText("pour vous dirigez et la touche ENTER", width));
             Console.WriteLine(border);
 
             // Indiquer si l'utilisateur est un administrateur
@@ -378,16 +381,50 @@ namespace Annulaire_Client
             list.Add(SelectOption("catégorie", listVerifCate));
             if (list[3] == "Etudiant")
             {
-                ReceiveController.PrintDynamicMessage("Entrer le matricule.");
-                list.Add(SingleInput("matricule"));
+                while (true)
+                {
+                    ReceiveController.PrintDynamicMessage("Entrer le matricule.");
+                    string input = SingleInput("matricule");
+
+                    if (IsValidMatricule(input))
+                    {
+                        list.Add(input);
+                        break;
+                    }
+
+                    ReceiveController.PrintDynamicMessage("Format invalide (ABCD12345678). Veuillez réessayer. (Enter)");
+                    
+                }
             }
             else { list.Add("Null"); }
-            ReceiveController.PrintDynamicMessage("Entrer le email.");
-            list.Add(SingleInput("email"));
+            while (true)
+            {   
+                ReceiveController.PrintDynamicMessage("Entrer le email.");
+                string input = SingleInput("email");
+                
+                if (IsValidEmail(input))
+                {
+                    list.Add(input);
+                    break; // Sort de la boucle si l'email est valide
+                }
+                
+                ReceiveController.PrintDynamicMessage("Format invalide (xxx.xxx@uqtr.ca). Veuillez réessayer. (Enter)");
+            }
             if (list[3] == "Professeur")
             {
-                ReceiveController.PrintDynamicMessage("Entrer le téléphone.");
-                list.Add(SingleInput("téléphone"));
+                while (true)
+                {   
+                    ReceiveController.PrintDynamicMessage("Entrer le téléphone.");
+                    string input = SingleInput("téléphone");
+                
+                    if (IsValidNumTel(input))
+                    {
+                        list.Add(input);
+                        break; // Sort de la boucle si l'email est valide
+                    }
+                    
+                    ReceiveController.PrintDynamicMessage("Format invalide (123 123 1234). Veuillez réessayer. (Enter)");
+                }
             }
             else { list.Add("Null"); }
             ReceiveController.PrintDynamicMessage("Entrer si dans Liste Rouge entre \"true\", \"false\"");
@@ -412,16 +449,51 @@ namespace Annulaire_Client
             list.Add(SelectOption("catégorie", listVerifCate));
             if (list[2] == "Etudiant")
             {
-                ReceiveController.PrintDynamicMessage("Entrer le matricule.");
-                list.Add(SingleInput("matricule"));
+                while (true)
+                {
+                    ReceiveController.PrintDynamicMessage("Entrer le matricule.");
+                    string input = SingleInput("matricule");
+
+                    if (IsValidMatricule(input))
+                    {
+                        list.Add(input);
+                        break;
+                    }
+                    
+                    ReceiveController.PrintDynamicMessage("Format invalide (ABCD12345678). Veuillez réessayer. (Enter)");
+                    
+                }
             }
             else { list.Add("Null"); }
-            ReceiveController.PrintDynamicMessage("Entrer le email.");
-            list.Add(SingleInput("email"));
+
+            while (true)
+            {   
+                ReceiveController.PrintDynamicMessage("Entrer le email.");
+                string input = SingleInput("email");
+                
+                if (IsValidEmail(input))
+                {
+                    list.Add(input);
+                    break; // Sort de la boucle si l'email est valide
+                }
+                
+                ReceiveController.PrintDynamicMessage("Format invalide (xxx.xxx@uqtr.ca). Veuillez réessayer. (Enter)");
+            }
             if (list[2] == "Professeur")
             {
-                ReceiveController.PrintDynamicMessage("Entrer le téléphone.");
-                list.Add(SingleInput("téléphone"));
+                while (true)
+                {   
+                    ReceiveController.PrintDynamicMessage("Entrer le téléphone.");
+                    string input = SingleInput("téléphone");
+                
+                    if (IsValidNumTel(input))
+                    {
+                        list.Add(input);
+                        break; // Sort de la boucle si l'email est valide
+                    }
+                    
+                    ReceiveController.PrintDynamicMessage("Format invalide (123 123 1234). Veuillez réessayer. (Enter)");
+                }
             }
             else { list.Add("Null"); }
             ReceiveController.PrintDynamicMessage("Entrer si dans Liste Rouge entre \"true\", \"false\"");
@@ -503,6 +575,23 @@ namespace Annulaire_Client
                     }
                 }
             }
+        }
+        private static bool IsValidMatricule(string matricule)
+        {
+            string pattern = @"^[A-Z]{4}\d{8}$";    // 4 lettres suivis de 6 chiffres
+            return Regex.IsMatch(matricule, pattern);
+        }
+        
+        private static bool IsValidEmail(string email)
+        {
+            string pattern = @"^[a-zA-Z]+\.[a-zA-Z]+@uqtr\.ca$"; // prénom.nom@uqtr.ca
+            return Regex.IsMatch(email, pattern);
+        }
+        
+        private static bool IsValidNumTel(string numero)
+        {
+            string pattern = @"^\d{3} \d{3} \d{4}$"; // 123 123 1234
+            return Regex.IsMatch(numero, pattern);
         }
     }
 
