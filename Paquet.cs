@@ -67,26 +67,3 @@ namespace Annulaire_Client
         Deconnexion
     }
 }
-/* A. Paquet de type Connexion
- *      - Le client envoie TypePaquet.Connexion au serveur pour acceder admin
- *          Met dans le premier element de la premiere list dans List<String> le mot de passe a verifier
- *      - Le serveur repond TypePaquet.Connexion en cas d'echec
- *          Met false dans boolInfo.
- *      - Le serveur repond TypePaquet.Connexion en cas de succes
- *          Met true dans boolInfo
- * 
- * B. Paquet de type Demande
- *      - Le client envoie TypePaquet.Demande avec la requete voulu(Voir devoir)
- *           Met dans intInfo le numero de la requete (1-8)
- *           Met dans la premiere list dans List<String> les filtres important pour chaque requete.
- *            ex: Requete 1, necessite la categorie(Etudiant ou Professeur)
- *                Requete 2, necessite le domaine d'activite(Logiciel, web mobile....)
- *                Requete 3, necessite un Nom
- * 
- * ...
- * ...
- * ...
- * 
- * C. Paquet de type Deconnexion
- *      - Le client envoie TypePaquet.Deconnexion c'est tout.
- */
