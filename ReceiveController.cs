@@ -1,18 +1,93 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
+﻿
 namespace Annulaire_Client
 {
     internal class ReceiveController
     {
         public ReceiveController() { }
 
+        //Controlleur, annalyse le paquet recu et affiche
+        public void HandleReceivedMessage(Paquet paquet, Menu menu)
+        {
+            switch (paquet.type)
+            {
+                case TypePaquet.Connexion:
+                    if (paquet.boolInfo == true)
+                    {
+                        PrintConnexionSucces();
+                        menu.setIsAdmin(true);
+                    }
+                    else
+                    {
+                        PrintConnexionFailed();
+                        menu.setIsAdmin(false);
+                    }
+                    break;
+
+                case TypePaquet.Demande:
+                    switch (paquet.intInfo)
+                    {
+                        case 1:
+                            if (paquet.boolInfo == true)
+                            {
+                                PrintMembre(paquet.donnee);
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 2:
+                            if (paquet.boolInfo == true)
+                            {
+                                PrintMembre(paquet.donnee);
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 3:
+                            if (paquet.boolInfo == true)
+                            {
+                               PrintMembre(paquet.donnee);
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 4:
+                            if (paquet.boolInfo == true)
+                            {
+                                PrintDemandeSucces("Succes, le membre a bien été ajouté");
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 5:
+                            if (paquet.boolInfo == true)
+                            {
+                                PrintDemandeSucces("Succes, le membre a bien été supprimé.");
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 6:
+                            if (paquet.boolInfo == true)
+                            {
+                                PrintDemandeSucces("Succes, le membre a bien été modifié.");
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 7:
+                            if (paquet.boolInfo == true)
+                            {
+                                PrintDemandeSucces("Succes, si le numéro existe le membre a bien été mis sur la liste rouge.");
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 8:
+                            if (paquet.boolInfo == true)
+                            {
+                                PrintDemandeSucces("Succes, si le numéro existe le membre a bien été enlever de la liste rouge.");
+                            }
+                            else { PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                    }
+                    break;
+            }
+        }
+
+        //Affiche un message dynamique
         public static void PrintDynamicMessage(string message)
         {
             int consoleWidth = Console.WindowWidth;
@@ -46,6 +121,7 @@ namespace Annulaire_Client
             }
         }
 
+        //Pour afficher tout les proprietes d'un membre lorsqu'on affiche un ou plusieurs membres
         public static void PrintTableHeaders()
         {
             // Définir les en-têtes
@@ -68,18 +144,19 @@ namespace Annulaire_Client
             Console.WriteLine(paddedHeaderLine);
         }
 
-
-
+        //Pour afficher une connexion en tant qu'administrateur
         public void PrintConnexionSucces()
         {
             PrintDynamicMessage("Vous êtes désormais connecté en tant qu'administrateur");
         }
 
+        //Pour afficher que le mot de passe entree, etait le mauvais
         public void PrintConnexionFailed()
         {
             PrintDynamicMessage("Mauvais mot de passe, vous n'êtes pas connecté en tant qu'administrateur.");
         }
 
+        //Fonction pour afficher les membres retournees dans le Paquet
         public void PrintMembre(List<List<string>> membres)
         {
             int consoleWidth = Console.WindowWidth;
@@ -119,11 +196,13 @@ namespace Annulaire_Client
             });
         }
 
+        //Custom print message succes
         public void PrintDemandeSucces(string succesMessage)
         {
             PrintDynamicMessage(succesMessage);
         }
 
+        //Custom print message echec
         public void PrintDemandeFailed(string erreur)
         {
             PrintDynamicMessage(erreur);

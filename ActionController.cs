@@ -13,6 +13,7 @@ namespace Annulaire_Client
         Socket socketClient;
         public ActionController(Socket nSocketClient) { this.socketClient = nSocketClient; }
 
+        //Requete de verifier le mot de passe administrateur
         public void VerifierMdp(string mdp)
         {
             List<List<String>> nMdp = new List<List<String>>();
