@@ -587,10 +587,10 @@ namespace Annulaire_Client
             return Regex.IsMatch(email, pattern);
         }
         
-        private static bool IsValidNumTel(string email)
+        private static bool IsValidNumTel(string numero)
         {
             string pattern = @"^\d{3} \d{3} \d{4}$"; // 123 123 1234
-            return Regex.IsMatch(email, pattern);
+            return Regex.IsMatch(numero, pattern);
         }
     }
 
