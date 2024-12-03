@@ -1,184 +1,367 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
+﻿using System.ComponentModel.Design;
 using System.Net.Sockets;
 
 namespace Annulaire_Client
 {
     internal class Menu
     {
-        ActionController aController;
-        bool isAdmin = false;
-
-        public Menu(Socket SocketClient) {
+        private ActionController aController;
+        private static List<Option> options = new();
+        private bool isAdmin = false; // Ajouter un indicateur pour vérifier si l'utilisateur est un administrateur
+        
+        public Menu(Socket SocketClient)
+        {
             this.aController = new ActionController(SocketClient);
+            InitializeMenu();
         }
-
+        
         public void setIsAdmin(bool set) { this.isAdmin = set; }
 
+        // Initialiser le menu avec les options disponibles
+        private void InitializeMenu()
+        {
+            options = new List<Option>
+            {
+                new Option(isAdmin ? "Déconnecter administrateur" : "Connecter administrateur", isAdmin ? LogoutAdmin : MenuConnexionAdmin),
+                new Option("Demande de requête", MenuDemandeRequete),
+                new("Quitter", () => Environment.Exit(0)),
+            };
+        }
+
+        // Afficher le menu principal
         public void MenuPrincipal()
         {
-            bool Running = true;
-            while (Running)
+            int index = 0;
+            bool inMenu = true;
+            WriteMenu(options, options[index]);
+
+            Console.CursorVisible = false; // Cacher le curseur
+
+            while (true)
             {
-                Console.WriteLine("***** DEVOIR 3 : Annulaire *****\n" +
-                                  " /\\_/\\  \r\n( o.o )\r\n > ^ <\n" +
-                                  "1 - Connecter administrateur\n" +
-                                  "2 - Demande de requete\n" +
-                                  "0 - Quitter");
-                try
-                {
-                    String Entre = Console.ReadLine();
-                    if (Entre != null)
+                if (inMenu)
+                {   
+                    
+                    ConsoleKeyInfo keyinfo = Console.ReadKey(true);
+                    if (keyinfo.Key == ConsoleKey.DownArrow)
                     {
-                        int choix = int.Parse(Entre);
-                        switch (choix)
+                        do
                         {
-                            //Connexion admin
-                            case 1:
-                                MenuConnexionAdmin();
-                                Thread.Sleep(1000);
-                                break;
-                            //Demande de requete
-                            case 2:
-                                MenuDemandeRequete();
-                                break;
-                            //Quitter l'application
-                            case 0:
-                                Console.WriteLine("Vous avez quitté l'application.");
-                                Running = false;
-                                break;
-                            default:
-                                Console.WriteLine("Entrer un choix valide.");
-                                break;
+                            index = (index + 1) % options.Count;
+                        } while (!isAdmin && options[index].Name.Contains("(Admin)"));
+                        WriteMenu(options, options[index]);
+                    }
+                    else if (keyinfo.Key == ConsoleKey.UpArrow)
+                    {
+                        do
+                        {
+                            index = (index - 1 + options.Count) % options.Count;
+                        } while (!isAdmin && options[index].Name.Contains("(Admin)"));
+                        WriteMenu(options, options[index]);
+                    }
+                    else if (keyinfo.Key == ConsoleKey.Enter)
+                    {
+                        if (!isAdmin && options[index].Name.Contains("(Admin)"))
+                        {
+                            Console.WriteLine("Accès refusé. Administrateur seulement.");
+                            Thread.Sleep(1000);
+                            WriteMenu(options, options[index]);
+                        }
+                        else
+                        {
+                            inMenu = false;
+                            options[index].Selected.Invoke();
+                            index = 0;
+                            InitializeMenu(); // Re-initialize the menu to update the options
+                            WriteMenu(options, options[index]);
+                            inMenu = true;
                         }
                     }
-                }
-                catch
-                {
-                    Console.WriteLine("Entrer un choix valide.");
-                }
-            }
-        }
-
-        private void MenuConnexionAdmin()
-        {
-            bool Running = true;
-            string Entree = "";
-            Console.WriteLine("Entrer le mot de passe administrateur.");
-            while (Running)
-            {
-                try
-                {
-                    Entree = Console.ReadLine();
-                    if(Entree != "")
+                    else if (keyinfo.Key == ConsoleKey.X)
                     {
-                        aController.VerifierMdp(Entree);
-                        Running = false;
                         break;
                     }
-                    else 
-                    {
-                        Console.WriteLine("Entrer un mot de passe.");
-                    }
-                }
-                catch
-                {
-                    Console.WriteLine("Entrer un mot de passe.");
                 }
             }
+
+            Console.CursorVisible = true; // Afficher le curseur
         }
 
+        // Écrire le menu à l'écran
+        private void WriteMenu(List<Option> options, Option selectedOption)
+        {
+            Console.Clear();
+            int width = Console.WindowWidth;
+            string border = new('-', width);
+
+            Console.WriteLine(border);
+            Console.WriteLine(CenterText("***********************************", width));
+            Console.WriteLine(CenterText("*****     DEVOIR 3 : Annulaire     *****", width));
+            Console.WriteLine(CenterText("***********************************", width));
+            Console.WriteLine(border);
+
+            // Indiquer si l'utilisateur est un administrateur
+            string adminStatus = isAdmin ? "Statut: Administrateur" : "Statut: Utilisateur";
+            Console.WriteLine(CenterText(adminStatus, width));
+            Console.WriteLine(border);
+
+            foreach (Option option in options)
+            {
+                string optionText = option == selectedOption ? $"> {option.Name}" : $"  {option.Name}";
+                if (!isAdmin && option.Name.Contains("(Admin)"))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                }
+                else if (option == selectedOption && (option.Name == "Déconnecter administrateur" || option.Name == "Quitter" || option.Name == "Retour"))
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                }
+                else if (option == selectedOption)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                }
+                else
+                {
+                    Console.ResetColor();
+                }
+
+                Console.WriteLine(CenterText(optionText, width));
+            }
+            Console.ResetColor();
+            Console.WriteLine(border);
+        }
+
+        // Centrer le texte dans la console
+        private string CenterText(string text, int width)
+        {
+            int padding = (width - text.Length) / 2;
+            return new string(' ', padding) + text;
+        }
+
+        // Menu pour la connexion administrateur
+        private void MenuConnexionAdmin()
+        {
+            Console.Clear();
+            Console.CursorVisible = true; // Afficher le curseur
+            ReceiveController.PrintDynamicMessage("Entrer le mot de passe administrateur.");
+            string Entree = "";
+            while (true)
+            {
+                ConsoleKeyInfo keyinfo = Console.ReadKey(true);
+                if (keyinfo.Key == ConsoleKey.Enter)
+                {
+                    if (!string.IsNullOrEmpty(Entree))
+                    {
+                        aController.VerifierMdp(Entree);
+                        Thread.Sleep(1000);
+                        break;
+
+                    }
+                }
+                else if (keyinfo.Key == ConsoleKey.Backspace && Entree.Length > 0)
+                {
+                    Entree = Entree.Substring(0, Entree.Length - 1);
+                    Console.Write("\b \b");
+                }
+                else if (!char.IsControl(keyinfo.KeyChar))
+                {
+                    Entree += keyinfo.KeyChar;
+                    Console.Write("*");
+                }
+            }
+            Console.CursorVisible = false; // Cacher le curseur
+        }
+
+        // Déconnexion administrateur
+        private void LogoutAdmin()
+        {
+            isAdmin = false;
+            ReceiveController.PrintDynamicMessage("Vous êtes maintenant déconnecté en tant qu'administrateur.");
+            Thread.Sleep(2000);
+            InitializeMenu();
+            MenuPrincipal();
+        }
+
+        // Menu pour les demandes de requêtes
         private void MenuDemandeRequete()
         {
-            bool running = true;
-            int choix;
-            Console.WriteLine("***** Choisisez une requête. *****");
-            while (running)
+            int index = 0;
+            bool inMenu = true;
+            List<Option> requestOptions = new List<Option>
             {
-                try
+                new Option("Lister membre catégorie", () =>
                 {
-                    Console.WriteLine("1-Lister membre catégorie \n2-Lister professeur domaine \n3-Rechercher un membre \n4-Ajouter un membre(Admin) \n" +
-                        "5-Supprimer un membre(Admin) \n6-Modifier un membre(Admin) \n7-Mettre un membre sur Liste Rouge(Admin) \n8-Enlever un membre sur Liste Rouge(Admin) \n0- Retour");
-                    choix = int.Parse(Console.ReadLine());
-                    if(choix >= 0 && choix < 9 )
+                    List<string> listVerifCate = new List<string>() { "Etudiant", "Professeur" };
+                    string categorie = SelectOption("catégorie", listVerifCate);
+                    aController.ListerMembreCategorie(categorie);
+                    ReceiveController.PrintDynamicMessage("Table des membres pour:" + categorie);
+                    ReceiveController.PrintTableHeaders();
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Lister professeur domaine", () =>
+                {
+                    List<string> listVerifDom = new List<string>() { "Logiciel", "Science des données", "Web et mobile", "Cybersécurité" };
+                    string domaine = SelectOption("domaine", listVerifDom);
+                    aController.ListerProfesseurDomaine(domaine);
+                    ReceiveController.PrintDynamicMessage("Table des membres pour:" + domaine);
+                    ReceiveController.PrintTableHeaders();
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Rechercher un membre", () =>
+                {
+                    ReceiveController.PrintDynamicMessage("Entrer le nom du membre que vous recherchez.");
+                    string nom = SingleInput("nom");
+                    aController.RechercherMembre(nom);
+                    ReceiveController.PrintDynamicMessage("Table des membres pour:" + nom);
+                    ReceiveController.PrintTableHeaders();
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Ajouter un membre (Admin)", () =>
+                {
+                    if (!isAdmin)
                     {
-                        switch(choix)
+                        Console.WriteLine("Accès refusé. Administrateur seulement.");
+                        Thread.Sleep(1000);
+                        return;
+                    }
+                    List<string> p = MenuAjoutMembre();
+                    aController.AjouterMembre(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+                    Console.WriteLine("Appuyez sur Entrée pour revenir...");
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Supprimer un membre (Admin)", () =>
+                {
+                    if (!isAdmin)
+                    {
+                        Console.WriteLine("Accès refusé. Administrateur seulement.");
+                        Thread.Sleep(1000);
+                        return;
+                    }
+                    ReceiveController.PrintDynamicMessage("Entrer le numéro dont vous voulez supprimer de la BD.");
+                    string supNum = SingleInput("numéro");
+                    aController.SupprimerMembre(supNum);
+                    Console.WriteLine("Appuyez sur Entrée pour revenir...");
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Modifier un membre (Admin)", () =>
+                {
+                    if (!isAdmin)
+                    {
+                        Console.WriteLine("Accès refusé. Administrateur seulement.");
+                        Thread.Sleep(1000);
+                        return;
+                    }
+                    ReceiveController.PrintDynamicMessage("Entrer le numéro dont vous voulez modifier dans la BD.");
+                    string modifyNum = SingleInput("numéro");
+                    List<string> d = MenuModifierMembre(modifyNum);
+                    aController.ModifierMembre(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
+                    Console.WriteLine("Appuyez sur Entrée pour revenir...");
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Mettre un membre sur Liste Rouge (Admin)", () =>
+                {
+                    if (!isAdmin)
+                    {
+                        Console.WriteLine("Accès refusé. Administrateur seulement.");
+                        Thread.Sleep(1000);
+                        return;
+                    }
+                    ReceiveController.PrintDynamicMessage("Entrer le numéro dont vous voulez ajouter à la Liste Rouge.");
+                    string ajoutLRNum = SingleInput("numéro");
+                    aController.AjouterMembreListeRouge(ajoutLRNum);
+                    Console.WriteLine("Appuyez sur Entrée pour revenir...");
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Enlever un membre sur Liste Rouge (Admin)", () =>
+                {
+                    if (!isAdmin)
+                    {
+                        Console.WriteLine("Accès refusé. Administrateur seulement.");
+                        Thread.Sleep(1000);
+                        return;
+                    }
+                    ReceiveController.PrintDynamicMessage("Entrer le numéro dont vous voulez enlever de la Liste Rouge.");
+                    string removeLRNum = SingleInput("numéro");
+                    aController.EnleverMembreListRouge(removeLRNum);
+                    Console.WriteLine("Appuyez sur Entrée pour revenir...");
+                    Console.CursorVisible = true; // Afficher le curseur
+                    Console.ReadLine();
+                    Console.CursorVisible = false; // Cacher le curseur
+                }),
+                new Option("Retour", () => { })
+            };
+
+            WriteMenu(requestOptions, requestOptions[index]);
+
+            Console.CursorVisible = false; // Cacher le curseur
+
+            while (true)
+            {
+                if (inMenu)
+                {
+                    ConsoleKeyInfo keyinfo = Console.ReadKey(true);
+                    if (keyinfo.Key == ConsoleKey.DownArrow)
+                    {
+                        do
                         {
-                            case 0 :
-                                running = false;
+                            index = (index + 1) % requestOptions.Count;
+                        } while (!isAdmin && requestOptions[index].Name.Contains("(Admin)"));
+                        WriteMenu(requestOptions, requestOptions[index]);
+                    }
+                    else if (keyinfo.Key == ConsoleKey.UpArrow)
+                    {
+                        do
+                        {
+                            index = (index - 1 + requestOptions.Count) % requestOptions.Count;
+                        } while (!isAdmin && requestOptions[index].Name.Contains("(Admin)"));
+                        WriteMenu(requestOptions, requestOptions[index]);
+                    }
+                    else if (keyinfo.Key == ConsoleKey.Enter)
+                    {
+                        if (!isAdmin && requestOptions[index].Name.Contains("(Admin)"))
+                        {
+                            Console.WriteLine("Accès refusé. Administrateur seulement.");
+                            Thread.Sleep(1000);
+                            WriteMenu(requestOptions, requestOptions[index]);
+                        }
+                        else
+                        {
+                            inMenu = false;
+                            requestOptions[index].Selected.Invoke();
+                            if (index == requestOptions.Count - 1) // Si "Retour" est sélectionné
+                            {
                                 break;
-                            case 1 :
-                                Console.WriteLine("Entrer une categorie entre \"Etudiant\" et \"Professeur\"");
-                                List<string> listVerifCate = new List<string>() { "Etudiant", "Professeur" };
-                                string categorie = SingleInputVerif("categorie", listVerifCate);
-                                aController.ListerMembreCategorie(categorie);
-                                Thread.Sleep(1000);
-                                break;
-                            case 2 :
-                                Console.WriteLine("Entrer un domaine entre \"Logiciel\", \"Science des données\", \"Web et mobile\", \"Cybersécurité\"");
-                                List<string> listVerifDom = new List<string>() { "Logiciel" , "Science des données", "Web et mobile", "Cybersécurité" };
-                                string domaine = SingleInputVerif("domaine", listVerifDom);
-                                aController.ListerProfesseurDomaine(domaine);
-                                Thread.Sleep(1000);
-                                break;
-                            case 3 :
-                                Console.WriteLine("Entrer le nom du membre que vous recherchez.");
-                                string Nom = SingleInput("nom");
-                                aController.RechercherMembre(Nom);
-                                Thread.Sleep(1000);
-                                break;
-                            case 4 :
-                                List<string> p = MenuAjoutMembre();
-                                aController.AjouterMembre(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-                                Thread.Sleep(1000);
-                                break;
-                            case 5 :
-                                Console.WriteLine("Entrer le numero dont vous voulez supprimer de la bd.");
-                                string supNum = SingleInput("numero");
-                                aController.SupprimerMembre(supNum);
-                                Thread.Sleep(1000);
-                                break;
-                            case 6 :
-                                Console.WriteLine("Entrer le numero dont vous voulez supprimer de la bd.");
-                                string modifyNum = SingleInput("numero");
-                                List<string> d = MenuModifierMembre(modifyNum); 
-                                aController.ModifierMembre(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
-                                Thread.Sleep(1000);
-                                break;
-                            case 7 :
-                                Console.WriteLine("Entrer le numero dont vous voulez ajouter à la Liste Rouge");
-                                string AjoutLRNum = SingleInput("numero");
-                                aController.AjouterMembreListeRouge(AjoutLRNum);
-                                Thread.Sleep(1000);
-                                break;
-                            case 8 :
-                                Console.WriteLine("Entrer le numero dont vous voulez ajouter à la Liste Rouge");
-                                string RemoveLRNum = SingleInput("numero");
-                                aController.EnleverMembreListRouge(RemoveLRNum);
-                                Thread.Sleep(1000);
-                                break;
-                            default:
-                                Console.WriteLine("Entrer un choix valide.");
-                                break;
+                            }
+                            index = 0;
+                            WriteMenu(requestOptions, requestOptions[index]);
+                            inMenu = true;
                         }
                     }
-                    else
+                    else if (keyinfo.Key == ConsoleKey.X)
                     {
-                        Console.WriteLine("Entrer un choix valide entre 0 et 8.");
+                        break;
                     }
-                }
-                catch
-                {
-                    Console.WriteLine("Entrer un choix valide entre 0 et 8.");
                 }
             }
 
+            Console.CursorVisible = true; // Afficher le curseur
         }
 
+        // Menu pour modifier un membre
         private List<string> MenuModifierMembre(string num)
         {
             List<string> listVerifCate = new List<string>() { "Etudiant", "Professeur" };
@@ -186,91 +369,71 @@ namespace Annulaire_Client
             List<string> listVerifLR = new List<string>() { "true", "false" };
             List<string> list = new List<string>();
             list.Add(num);
-            Console.WriteLine("Entrer le nom.");
+            ReceiveController.PrintDynamicMessage("Entrer le nom.");
             list.Add(SingleInput("nom"));
-            Console.WriteLine("Entrer le prenom.");
+            ReceiveController.PrintDynamicMessage("Entrer le prénom.");
             list.Add(SingleInput("prenom"));
-            Console.WriteLine("Entrer une categorie entre \"Etudiant\" et \"Professeur\"");
-            list.Add(SingleInputVerif("categorie", listVerifCate));
+            ReceiveController.PrintDynamicMessage("Entrer une catégorie entre \"Etudiant\" et \"Professeur\"");
+            list.Add(SelectOption("catégorie", listVerifCate));
             if (list[3] == "Etudiant")
             {
-                Console.WriteLine("Entrer le matricule.");
+                ReceiveController.PrintDynamicMessage("Entrer le matricule.");
                 list.Add(SingleInput("matricule"));
             }
             else { list.Add("Null"); }
-            Console.WriteLine("Entrer le email.");
+            ReceiveController.PrintDynamicMessage("Entrer le email.");
             list.Add(SingleInput("email"));
             if (list[3] == "Professeur")
             {
-                Console.WriteLine("Entrer le téléphone.");
+                ReceiveController.PrintDynamicMessage("Entrer le téléphone.");
                 list.Add(SingleInput("téléphone"));
             }
             else { list.Add("Null"); }
-            Console.WriteLine("Entrer si dans Liste Rouge entre \"true\", \"false\"");
-            list.Add(SingleInputVerif("ListeRouge", listVerifLR));
-            Console.WriteLine("Entrer un domaine entre \"Logiciel\", \"Science des données\", \"Web et mobile\", \"Cybersécurité\"");
-            list.Add(SingleInputVerif("domaine", listVerifDom));
+            ReceiveController.PrintDynamicMessage("Entrer si dans Liste Rouge entre \"true\", \"false\"");
+            list.Add(SelectOption("ListeRouge", listVerifLR));
+            ReceiveController.PrintDynamicMessage("Entrer un domaine entre \"Logiciel\", \"Science des données\", \"Web et mobile\", \"Cybersécurité\"");
+            list.Add(SelectOption("domaine", listVerifDom));
             return list;
         }
 
+        // Menu pour ajouter un membre
         private List<string> MenuAjoutMembre()
         {
             List<string> listVerifCate = new List<string>() { "Etudiant", "Professeur" };
             List<string> listVerifDom = new List<string>() { "Logiciel", "Science des données", "Web et mobile", "Cybersécurité" };
-            List<string> listVerifLR = new List<string> () { "true", "false" };
+            List<string> listVerifLR = new List<string>() { "true", "false" };
             List<string> list = new List<string>();
-            Console.WriteLine("Entrer le nom.");
+            ReceiveController.PrintDynamicMessage("Entrer le nom.");
             list.Add(SingleInput("nom"));
-            Console.WriteLine("Entrer le prenom.");
+            ReceiveController.PrintDynamicMessage("Entrer le prénom.");
             list.Add(SingleInput("prenom"));
-            Console.WriteLine("Entrer une categorie entre \"Etudiant\" et \"Professeur\"");
-            list.Add(SingleInputVerif("categorie", listVerifCate));
+            ReceiveController.PrintDynamicMessage("Entrer une catégorie entre \"Etudiant\" et \"Professeur\"");
+            list.Add(SelectOption("catégorie", listVerifCate));
             if (list[2] == "Etudiant")
             {
-                Console.WriteLine("Entrer le matricule.");
+                ReceiveController.PrintDynamicMessage("Entrer le matricule.");
                 list.Add(SingleInput("matricule"));
             }
             else { list.Add("Null"); }
-            Console.WriteLine("Entrer le email.");
+            ReceiveController.PrintDynamicMessage("Entrer le email.");
             list.Add(SingleInput("email"));
             if (list[2] == "Professeur")
             {
-                Console.WriteLine("Entrer le téléphone.");
+                ReceiveController.PrintDynamicMessage("Entrer le téléphone.");
                 list.Add(SingleInput("téléphone"));
             }
             else { list.Add("Null"); }
-            Console.WriteLine("Entrer si dans Liste Rouge entre \"true\", \"false\"");
-            list.Add(SingleInputVerif("ListeRouge", listVerifLR));
-            Console.WriteLine("Entrer un domaine entre \"Logiciel\", \"Science des données\", \"Web et mobile\", \"Cybersécurité\"");
-            list.Add(SingleInputVerif("domaine", listVerifDom));
+            ReceiveController.PrintDynamicMessage("Entrer si dans Liste Rouge entre \"true\", \"false\"");
+            list.Add(SelectOption("ListeRouge", listVerifLR));
+            ReceiveController.PrintDynamicMessage("Entrer un domaine entre \"Logiciel\", \"Science des données\", \"Web et mobile\", \"Cybersécurité\"");
+            list.Add(SelectOption("domaine", listVerifDom));
             return list;
         }
 
+        // Obtenir une entrée unique de l'utilisateur
         private string SingleInput(string MotCle)
         {
-            while(true)
-            {
-                try
-                {
-                    string input = Console.ReadLine();
-                    if(input != null || input != "")
-                    {
-                        return input;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Veuillez entrer un {MotCle} valide.");
-                    }
-                }
-                catch
-                {
-                    Console.WriteLine($"Veuillez entrer un {MotCle} valide.");
-                }
-            }
-        }
-
-        private string SingleInputVerif(string MotCle, List<string> verification)
-        {
+            Console.CursorVisible = true; // Afficher le curseur
             while (true)
             {
                 try
@@ -278,25 +441,79 @@ namespace Annulaire_Client
                     string input = Console.ReadLine();
                     if (input != null || input != "")
                     {
-                        foreach (string line in verification)
-                        {
-                            if(input == line)
-                            {
-                                return input;
-                            }
-                        }
-                        Console.WriteLine($"Veuillez entrer un {MotCle} valide.");
+                        Console.CursorVisible = false; // Cacher le curseur
+                        return input;
                     }
                     else
                     {
-                        Console.WriteLine($"Veuillez entrer un {MotCle} valide.");
+                        ReceiveController.PrintDynamicMessage($"Veuillez entrer un {MotCle} valide.");
                     }
                 }
                 catch
                 {
-                    Console.WriteLine($"Veuillez entrer un {MotCle} valide.");
+                    ReceiveController.PrintDynamicMessage($"Veuillez entrer un {MotCle} valide.");
                 }
             }
+        }
+
+        // Sélectionner une option parmi une liste
+        private string SelectOption(string MotCle, List<string> options)
+        {
+            int index = 0;
+            bool inMenu = true;
+            Console.CursorVisible = false; // Cacher le curseur
+
+            while (true)
+            {
+                Console.Clear();
+                ReceiveController.PrintDynamicMessage($"Veuillez sélectionner un {MotCle} valide:");
+
+                for (int i = 0; i < options.Count; i++)
+                {
+                    if (i == index)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("> ");
+                    }
+                    else
+                    {
+                        Console.ResetColor();
+                        Console.Write("  ");
+                    }
+                    Console.WriteLine(options[i]);
+                }
+                Console.ResetColor();
+
+                if (inMenu)
+                {
+                    ConsoleKeyInfo keyinfo = Console.ReadKey(true);
+                    if (keyinfo.Key == ConsoleKey.DownArrow)
+                    {
+                        index = (index + 1) % options.Count;
+                    }
+                    else if (keyinfo.Key == ConsoleKey.UpArrow)
+                    {
+                        index = (index - 1 + options.Count) % options.Count;
+                    }
+                    else if (keyinfo.Key == ConsoleKey.Enter)
+                    {
+                        Console.CursorVisible = true; // Afficher le curseur
+                        return options[index];
+                    }
+                }
+            }
+        }
+    }
+
+    public class Option
+    {
+        public string Name { get; }
+        public Action Selected { get; }
+
+        public Option(string name, Action selected)
+        {
+            Name = name;
+            Selected = selected;
         }
     }
 }

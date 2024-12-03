@@ -26,12 +26,12 @@ namespace Annulaire_Client
                 // Connect to the server
                 await socketClient.ConnectAsync(new IPEndPoint(IPAddress.Parse(serverAddress), port));
                 Console.WriteLine("Connected to the server.");
-
+                
                 Menu menu = new Menu(socketClient);
-
+                
                 // Start receiving data from the server in a separate task
                 Task receiveTask = Task.Run(() => ReceiveData(menu));
-
+                
                 menu.MenuPrincipal();
 
                 Paquet paquetDec = new Paquet(0, 0, TypePaquet.Deconnexion, new List<List<String>>(), false);
@@ -80,14 +80,14 @@ namespace Annulaire_Client
             ReceiveController rContr = new ReceiveController();
             switch (paquet.type)
             {
-                case TypePaquet.Connexion :
-                    if(paquet.boolInfo == true)
+                case TypePaquet.Connexion:
+                    if (paquet.boolInfo == true)
                     {
                         rContr.PrintConnexionSucces();
                         menu.setIsAdmin(true);
                     }
-                    else 
-                    { 
+                    else
+                    {
                         rContr.PrintConnexionFailed(); 
                         menu.setIsAdmin(false);
                     }
@@ -96,59 +96,59 @@ namespace Annulaire_Client
                 case TypePaquet.Demande:
                     switch (paquet.intInfo)
                     {
-                        case 1 :
-                            if(paquet.boolInfo == true)
-                            {
-                                rContr.PrintMembre(paquet.donnee);
-                            }
-                            else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
-                            break;
-                        case 2 :
+                        case 1:
                             if (paquet.boolInfo == true)
                             {
                                 rContr.PrintMembre(paquet.donnee);
                             }
                             else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
                             break;
-                        case 3 :
+                        case 2:
                             if (paquet.boolInfo == true)
                             {
                                 rContr.PrintMembre(paquet.donnee);
                             }
                             else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
                             break;
-                        case 4 :
+                        case 3:
+                            if (paquet.boolInfo == true)
+                            {
+                                rContr.PrintMembre(paquet.donnee);
+                            }
+                            else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
+                            break;
+                        case 4:
                             if (paquet.boolInfo == true)
                             {
                                 rContr.PrintDemandeSucces("Succes, le membre a bien été ajouté");
                             }
                             else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
                             break;
-                        case 5 :
+                        case 5:
                             if (paquet.boolInfo == true)
                             {
                                 rContr.PrintDemandeSucces("Succes, le membre a bien été supprimé.");
                             }
                             else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
                             break;
-                        case 6 :
+                        case 6:
                             if (paquet.boolInfo == true)
                             {
                                 rContr.PrintDemandeSucces("Succes, le membre a bien été modifié.");
                             }
                             else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
                             break;
-                        case 7 :
+                        case 7:
                             if (paquet.boolInfo == true)
                             {
-                                rContr.PrintDemandeSucces("Succes, le membre a bien été mis sur la liste rouge.");
+                                rContr.PrintDemandeSucces("Succes, si le numéro existe le membre a bien été mis sur la liste rouge.");
                             }
                             else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
                             break;
-                        case 8 :
+                        case 8:
                             if (paquet.boolInfo == true)
                             {
-                                rContr.PrintDemandeSucces("Succes, le membre a bien été enlever de la liste rouge.");
+                                rContr.PrintDemandeSucces("Succes, si le numéro existe le membre a bien été enlever de la liste rouge.");
                             }
                             else { rContr.PrintDemandeFailed(paquet.donnee[0][0]); }
                             break;
