@@ -38,7 +38,7 @@ namespace Annulaire_Client
                 byte[] buffer = paquetDec.bytes();
                 await socketClient.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
 
-                // Close the socket and cleanup
+                // Close the socket
                 socketClient.Close();
                 Console.WriteLine("Connection closed.");
             }
