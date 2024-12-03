@@ -92,6 +92,13 @@ namespace Annulaire_Client
             Paquet p = new Paquet(8, 0, TypePaquet.Demande, nNum, false);
             EnvoyerPaquet(p);
         }
+        //Envoi du paquet de deconnexion
+        public void Exit()
+        {
+            Paquet paquetDec = new Paquet(0, 0, TypePaquet.Deconnexion, new List<List<String>>(), false);
+            EnvoyerPaquet(paquetDec);
+            Environment.Exit(0);
+        }
 
         private async void EnvoyerPaquet(Paquet paquet)
         {

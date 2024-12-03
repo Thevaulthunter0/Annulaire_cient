@@ -24,9 +24,10 @@ namespace Annulaire_Client
             {
                 new Option(isAdmin ? "Déconnecter administrateur" : "Connecter administrateur", isAdmin ? LogoutAdmin : MenuConnexionAdmin),
                 new Option("Demande de requête", MenuDemandeRequete),
-                new("Quitter", () => Environment.Exit(0)),
+                new("Quitter", () => aController.Exit()),
             };
         }
+
 
         // Afficher le menu principal
         public void MenuPrincipal()

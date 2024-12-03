@@ -1,9 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using static Annulaire_Client.Paquet;
 
 namespace Annulaire_Client
 {
@@ -33,10 +29,6 @@ namespace Annulaire_Client
                 Task receiveTask = Task.Run(() => ReceiveData(menu));
                 
                 menu.MenuPrincipal();
-
-                Paquet paquetDec = new Paquet(0, 0, TypePaquet.Deconnexion, new List<List<String>>(), false);
-                byte[] buffer = paquetDec.bytes();
-                await socketClient.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
 
                 // Close the socket
                 socketClient.Close();
